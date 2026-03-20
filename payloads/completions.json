@@ -1,0 +1,5 @@
+{
+  "model": "random",
+  "prompt": "Say hello in one short sentence.",
+  "max_tokens": 32
+}

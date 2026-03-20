@@ -1,0 +1,21 @@
+{{- $version := env "AGENTGATEWAY_VERSION" | default "v1.0.0" -}}
+
+releases:
+  - name: agentgateway-crds
+    chart: oci://cr.agentgateway.dev/charts/agentgateway-crds
+    namespace: agentgateway-system
+    createNamespace: true
+    version: {{ $version | quote }}
+    installed: true
+
+  - name: agentgateway
+    chart: oci://cr.agentgateway.dev/charts/agentgateway
+    namespace: agentgateway-system
+    createNamespace: true
+    version: {{ $version | quote }}
+    installed: true
+    values:
+      - inferenceExtension:
+          enabled: true
+    needs:
+      - agentgateway-system/agentgateway-crds

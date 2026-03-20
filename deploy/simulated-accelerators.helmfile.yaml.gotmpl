@@ -1,0 +1,59 @@
+{{- $ns := .Namespace | default (env "NAMESPACE" | default "llm-d-sim") -}}
+{{- $rn := env "RELEASE_NAME_POSTFIX" | default "sim" -}}
+{{- $llmdInfraChart := env "LLMD_INFRA_CHART" | default "" -}}
+{{- $gaieChartVersion := env "GAIE_CHART_VERSION" | default "v1.4.0" -}}
+{{- $schedulerImageHub := env "LLMD_INFERENCE_SCHEDULER_IMAGE_HUB" | default "" -}}
+{{- $schedulerImageName := env "LLMD_INFERENCE_SCHEDULER_IMAGE_NAME" | default "" -}}
+{{- $schedulerImageTag := env "LLMD_INFERENCE_SCHEDULER_IMAGE_TAG" | default "" -}}
+{{- $routingSidecarImage := env "LLMD_ROUTING_SIDECAR_IMAGE" | default "" -}}
+
+repositories:
+  - name: llm-d-modelservice
+    url: https://llm-d-incubation.github.io/llm-d-modelservice/
+  - name: llm-d-infra
+    url: https://llm-d-incubation.github.io/llm-d-infra/
+
+releases:
+  - name: {{ printf "infra-%s" $rn | quote }}
+    namespace: {{ $ns | quote }}
+    chart: {{ $llmdInfraChart | quote }}
+    installed: true
+    values:
+      - gateway:
+          provider: agentgateway
+          gatewayClassName: agentgateway
+
+  - name: {{ printf "gaie-%s" $rn | quote }}
+    namespace: {{ $ns | quote }}
+    chart: oci://registry.k8s.io/gateway-api-inference-extension/charts/inferencepool
+    version: {{ $gaieChartVersion | quote }}
+    installed: true
+    needs:
+      - {{ printf "infra-%s" $rn | quote }}
+    values:
+      - ../values/gaie-sim.yaml
+      - provider:
+          name: none
+    {{- if and $schedulerImageHub $schedulerImageName $schedulerImageTag }}
+      - inferenceExtension:
+          image:
+            hub: {{ $schedulerImageHub | quote }}
+            name: {{ $schedulerImageName | quote }}
+            tag: {{ $schedulerImageTag | quote }}
+    {{- end }}
+
+  - name: {{ printf "ms-%s" $rn | quote }}
+    namespace: {{ $ns | quote }}
+    chart: llm-d-modelservice/llm-d-modelservice
+    version: v0.4.7
+    installed: true
+    needs:
+      - {{ printf "infra-%s" $rn | quote }}
+      - {{ printf "gaie-%s" $rn | quote }}
+    values:
+      - ../values/ms-sim.yaml
+    {{- if $routingSidecarImage }}
+      - routing:
+          proxy:
+            image: {{ $routingSidecarImage | quote }}
+    {{- end }}

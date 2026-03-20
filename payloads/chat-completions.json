@@ -1,0 +1,10 @@
+{
+  "model": "random",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Say hello in one short sentence."
+    }
+  ],
+  "max_tokens": 32
+}

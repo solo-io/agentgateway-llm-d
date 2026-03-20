@@ -26,6 +26,11 @@ go.work.sum
 
 # env file
 .env
+config/demo.env
+
+# Demo workspace state
+.cache/
+.state/
 
 # Editor/IDE
 # .idea/
