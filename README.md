@@ -10,8 +10,8 @@ It pins:
 - GAIE CRDs/chart: `v1.4.0`
 - `agentgateway`: `v1.0.0`
 - kind node image: `kindest/node:v1.34.0`
-- scheduler image: `docker.io/danehans/llm-d-inference-scheduler:v0.7.0-rc.1` (replace with upstream when v0.7.0 is released)
-- routing sidecar image: `docker.io/danehans/llm-d-routing-sidecar:v0.7.0-rc.1` (replace with upstream when v0.7.0 is released)
+- scheduler image: `docker.io/danehans/llm-d-inference-scheduler:v0.7.0-rc.2` (replace with upstream when v0.7.0 is released)
+- routing sidecar image: `docker.io/danehans/llm-d-routing-sidecar:v0.7.0-rc.2` (replace with upstream when v0.7.0 is released)
 
 ## Prerequisites
 
