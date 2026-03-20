@@ -1,6 +1,6 @@
 # agentgateway + llm-d Demo
 
-This repo turns the upstream [simulated-accelerators](https://github.com/danehans/llm-d/tree/kind_sim_e2e/guides/simulated-accelerators) path into a repeatable demo harness for `llm-d` with `agentgateway`.
+This repo turns the upstream [simulated-accelerators](https://github.com/llm-d/llm-d/blob/v0.5.1/guides/simulated-accelerators/README.md) path into a repeatable demo harness for `llm-d` with `agentgateway`.
 
 It pins:
 
