@@ -4,8 +4,8 @@ This repo turns the upstream [simulated-accelerators](https://github.com/llm-d/l
 
 It pins:
 
-- `llm-d`: `kind_sim_e2e` at `5a747ab5f794fec1310828acd3a46cd06b9f6f92`
-- `llm-d-infra`: `gateway-provider-split` at `83a7cb10fd764cf666e1c09980a7e95d94b74329`
+- `llm-d`: [PR #421](https://github.com/llm-d/llm-d/pull/421) at commit `5a747ab5f794fec1310828acd3a46cd06b9f6f92`
+- `llm-d-infra`: [PR #272](https://github.com/llm-d-incubation/llm-d-infra/pull/272) at commit `83a7cb10fd764cf666e1c09980a7e95d94b74329`
 - Gateway API CRDs: `v1.5.1`
 - GAIE CRDs/chart: `v1.4.0`
 - `agentgateway`: `v1.0.0`
