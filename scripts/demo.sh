@@ -544,6 +544,22 @@ Grafana:           http://127.0.0.1:${GRAFANA_LOCAL_PORT} (admin/admin)
 EOF
 }
 
+print_manual_curl_examples() {
+  cat <<EOF
+
+Manual curl checks:
+  curl -sS --fail-with-body \\
+    -H 'Content-Type: application/json' \\
+    -d '{"model":"random","prompt":"Say hello in one short sentence.","max_tokens":32}' \\
+    http://127.0.0.1:${INFERENCE_GATEWAY_LOCAL_PORT}/v1/completions | jq .
+
+  curl -sS --fail-with-body \\
+    -H 'Content-Type: application/json' \\
+    -d '{"model":"random","messages":[{"role":"user","content":"Say hello in one short sentence."}],"max_tokens":32}' \\
+    http://127.0.0.1:${INFERENCE_GATEWAY_LOCAL_PORT}/v1/chat/completions | jq .
+EOF
+}
+
 run_models_request() {
   log_info "GET /v1/models"
   curl -sS --fail-with-body "http://127.0.0.1:${INFERENCE_GATEWAY_LOCAL_PORT}/v1/models" | json_pp
@@ -565,11 +581,12 @@ run_chat_completions_request() {
     "http://127.0.0.1:${INFERENCE_GATEWAY_LOCAL_PORT}/v1/chat/completions" | json_pp
 }
 
-smoke_tests() {
+e2e_checks() {
   port_forward_start
   run_models_request
   run_completions_request
   run_chat_completions_request
+  print_manual_curl_examples
 }
 
 apply_traffic_script_configmap() {
@@ -752,6 +769,7 @@ walkthrough() {
   run_chat_completions_request
   pause_step
   log_info "Use the URLs above to inspect Prometheus and Grafana while traffic is flowing."
+  print_manual_curl_examples
 }
 
 setup() {
@@ -794,18 +812,18 @@ Commands:
   port-forward start   Forward the inference gateway, Prometheus, and Grafana.
   port-forward stop    Stop background port-forwards.
   port-forward status  Show port-forward state and local URLs.
-  smoke                Run local smoke tests through the port-forwarded gateway.
+  e2e                  Run local e2e checks through the port-forwarded gateway.
   walkthrough          Guided local demo flow with pauses between requests.
   traffic start        Launch an in-cluster curl client to generate monitoring traffic.
   traffic stop         Stop the in-cluster traffic generator.
   traffic status       Show traffic generator status and recent logs.
   cleanup              Stop helpers and delete the dedicated kind cluster.
-  all                  Run setup, start port-forwards, and execute smoke tests.
+  all                  Run setup, start port-forwards, and execute e2e checks.
 
 Examples:
   ./scripts/demo.sh setup
   ./scripts/demo.sh port-forward start
-  ./scripts/demo.sh smoke
+  ./scripts/demo.sh e2e
   ./scripts/demo.sh traffic start
 EOF
 }
@@ -853,9 +871,14 @@ case "${COMMAND}" in
         ;;
     esac
     ;;
+  e2e)
+    use_demo_context
+    e2e_checks
+    ;;
   smoke)
     use_demo_context
-    smoke_tests
+    log_warn "The 'smoke' command is deprecated; use './scripts/demo.sh e2e' instead."
+    e2e_checks
     ;;
   walkthrough)
     use_demo_context
@@ -884,7 +907,7 @@ case "${COMMAND}" in
     ;;
   all)
     setup
-    smoke_tests
+    e2e_checks
     ;;
   *)
     usage

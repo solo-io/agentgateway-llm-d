@@ -30,7 +30,7 @@ It pins:
 cp config/demo.env.example config/demo.env
 ./scripts/demo.sh setup
 ./scripts/demo.sh port-forward start
-./scripts/demo.sh smoke
+./scripts/demo.sh e2e
 ```
 
 After the port-forwards are up:
@@ -41,7 +41,7 @@ After the port-forwards are up:
 - Grafana: `http://127.0.0.1:13000`
 - Grafana credentials: `admin` / `admin`
 
-The gateway listener in this demo serves the model endpoints, so checking `/` is not a useful readiness signal. Use `/v1/models`, `./scripts/demo.sh smoke`, or `./scripts/demo.sh walkthrough`.
+The gateway listener in this demo serves the model endpoints, so checking `/` is not a useful readiness signal. Use `/v1/models`, `./scripts/demo.sh e2e`, or `./scripts/demo.sh walkthrough`.
 
 ## Manual Checks
 
@@ -87,7 +87,7 @@ curl -sS -o /dev/null -w 'baseline total=%{time_total}\n' \
   http://127.0.0.1:18080/v1/completions
 ```
 
-The file-backed request bodies used by the smoke tests are in `payloads/completions.json` and `payloads/chat-completions.json`.
+The file-backed request bodies used by the e2e checks are in `payloads/completions.json` and `payloads/chat-completions.json`.
 
 ## Traffic Generation
 
@@ -129,6 +129,7 @@ Stop it with:
 ./scripts/demo.sh preflight
 ./scripts/demo.sh sync-sources
 ./scripts/demo.sh setup
+./scripts/demo.sh e2e
 ./scripts/demo.sh status
 ./scripts/demo.sh walkthrough
 ./scripts/demo.sh port-forward status
@@ -143,7 +144,7 @@ Use `./scripts/demo.sh --auto walkthrough` to skip interactive pauses.
 - `deploy/`: local Helmfiles with pinned `agentgateway` and GAIE versions
 - `values/`: values files for the simulated-accelerators stack
 - `templates/httproute.yaml.tmpl`: rendered into the active HTTPRoute during setup
-- `payloads/`: sample request bodies used by the smoke tests
+- `payloads/`: sample request bodies used by the e2e checks
 - `config/demo.env.example`: override file for local customization
 
 ## Notes
