@@ -47,13 +47,13 @@ fi
 : "${MONITORING_NAMESPACE:=llm-d-monitoring}"
 : "${RELEASE_NAME_POSTFIX:=sim}"
 
-: "${LLMD_REPO_URL:=https://github.com/danehans/llm-d.git}"
-: "${LLMD_REF:=kind_sim_e2e}"
-: "${LLMD_COMMIT:=5a747ab5f794fec1310828acd3a46cd06b9f6f92}"
+: "${LLMD_REPO_URL:=https://github.com/llm-d/llm-d.git}"
+: "${LLMD_REF:=main}"
+: "${LLMD_COMMIT:=a57610457d9f5ae193b9683e7a4ead03724cc076}"
 
-: "${LLMD_INFRA_REPO_URL:=https://github.com/danehans/llm-d-infra.git}"
-: "${LLMD_INFRA_REF:=gateway-provider-split}"
-: "${LLMD_INFRA_COMMIT:=83a7cb10fd764cf666e1c09980a7e95d94b74329}"
+: "${LLMD_INFRA_REPO_URL:=https://github.com/llm-d-incubation/llm-d-infra.git}"
+: "${LLMD_INFRA_REF:=main}"
+: "${LLMD_INFRA_COMMIT:=143620a671cc1f9238da0d25fea44c21876c7e84}"
 
 : "${GATEWAY_API_CRD_REVISION:=v1.5.1}"
 : "${GATEWAY_API_INFERENCE_EXTENSION_CRD_REVISION:=v1.4.0}"
@@ -222,10 +222,19 @@ sync_repo() {
   local ref="$3"
   local commit="$4"
   local target="$5"
+  local current_url
 
   if [[ ! -d "${target}/.git" ]]; then
     log_info "Cloning ${name} into ${target}"
     git clone --filter=blob:none --no-checkout "${url}" "${target}"
+  else
+    current_url="$(git -C "${target}" remote get-url origin 2>/dev/null || true)"
+    if [[ -z "${current_url}" ]]; then
+      git -C "${target}" remote add origin "${url}"
+    elif [[ "${current_url}" != "${url}" ]]; then
+      log_info "Updating ${name} remote from ${current_url} to ${url}"
+      git -C "${target}" remote set-url origin "${url}"
+    fi
   fi
 
   log_info "Fetching ${name} at ${ref}"
@@ -341,8 +350,8 @@ apply_httproute() {
 wait_for_demo_readiness() {
   kubectl wait pod --for=condition=Ready --all -n "${NAMESPACE}" --timeout=300s
   kubectl wait "gateway/$(inference_gateway_name)" --for=condition=Programmed=True -n "${NAMESPACE}" --timeout=300s
-  kubectl wait "httproute/$(httproute_name)" --for=condition=Accepted=True -n "${NAMESPACE}" --timeout=300s
-  kubectl wait "httproute/$(httproute_name)" --for=condition=ResolvedRefs=True -n "${NAMESPACE}" --timeout=300s
+  wait_for_httproute_condition "$(httproute_name)" "Accepted" 300
+  wait_for_httproute_condition "$(httproute_name)" "ResolvedRefs" 300
 }
 
 verify_expected_images() {
@@ -412,6 +421,27 @@ wait_for_local_port() {
   done
 
   return 1
+}
+
+wait_for_httproute_condition() {
+  local route_name="$1"
+  local condition_name="$2"
+  local timeout_seconds="${3:-300}"
+  local remaining="${timeout_seconds}"
+  local status
+
+  while [[ "${remaining}" -gt 0 ]]; do
+    status="$(kubectl get "httproute/${route_name}" -n "${NAMESPACE}" -o jsonpath="{range .status.parents[*].conditions[?(@.type==\"${condition_name}\")]}{.status}{end}" 2>/dev/null || true)"
+    if [[ "${status}" == *True* ]]; then
+      log_success "HTTPRoute ${route_name} condition ${condition_name}=True"
+      return 0
+    fi
+    sleep 2
+    remaining=$((remaining - 2))
+  done
+
+  kubectl get "httproute/${route_name}" -n "${NAMESPACE}" -o yaml >&2 || true
+  die "Timed out waiting for HTTPRoute ${route_name} condition ${condition_name}=True"
 }
 
 wait_for_http_ok() {
