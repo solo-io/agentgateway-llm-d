@@ -1,17 +1,17 @@
 # agentgateway + llm-d Demo
 
-This repo turns the upstream [simulated-accelerators](https://github.com/llm-d/llm-d/blob/v0.5.1/guides/simulated-accelerators/README.md) path into a repeatable demo harness for `llm-d` with `agentgateway`.
+This repo turns the upstream [simulated-accelerators](https://github.com/llm-d/llm-d/blob/v0.6.0/guides/simulated-accelerators/README.md) path into a repeatable demo harness for `llm-d` with `agentgateway`.
 
 It pins:
 
-- `llm-d`: `main` at `a57610457d9f5ae193b9683e7a4ead03724cc076`
-- `llm-d-infra`: `main` at `143620a671cc1f9238da0d25fea44c21876c7e84`
+- `llm-d`: `v0.6.0`
+- `llm-d-infra`: `v1.4.0`
 - Gateway API CRDs: `v1.5.1`
 - GAIE CRDs/chart: `v1.4.0`
 - `agentgateway`: `v1.0.0`
 - kind node image: `kindest/node:v1.34.0`
-- scheduler image: `docker.io/danehans/llm-d-inference-scheduler:v0.7.0-rc.2` (replace with upstream when v0.7.0 is released)
-- routing sidecar image: `docker.io/danehans/llm-d-routing-sidecar:v0.7.0-rc.2` (replace with upstream when v0.7.0 is released)
+- scheduler image: `ghcr.io/llm-d/llm-d-inference-scheduler:v0.7.1`
+- routing sidecar image: `ghcr.io/llm-d/llm-d-routing-sidecar:v0.7.1`
 
 ## Prerequisites
 
@@ -149,6 +149,6 @@ Use `./scripts/demo.sh --auto walkthrough` to skip interactive pauses.
 
 ## Notes
 
-- The demo script clones pinned `llm-d` and `llm-d-infra` checkouts into `.cache/` unless you provide `LLMD_LOCAL_PATH` or `LLMD_INFRA_LOCAL_PATH` in `config/demo.env`.
-- Monitoring is installed from the pinned upstream `llm-d` checkout so the Grafana dashboards and monitoring scripts stay aligned with that branch.
+- The demo script clones the pinned `llm-d` and `llm-d-infra` release tags into `.cache/` unless you provide `LLMD_LOCAL_PATH` or `LLMD_INFRA_LOCAL_PATH` in `config/demo.env`.
+- Monitoring is installed from the pinned upstream `llm-d` checkout so the Grafana dashboards and monitoring scripts stay aligned with the `v0.6.0` release.
 - `cleanup` deletes the dedicated demo kind cluster and stops background helpers, but keeps the cached source checkouts.

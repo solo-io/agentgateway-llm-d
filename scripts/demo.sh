@@ -48,22 +48,22 @@ fi
 : "${RELEASE_NAME_POSTFIX:=sim}"
 
 : "${LLMD_REPO_URL:=https://github.com/llm-d/llm-d.git}"
-: "${LLMD_REF:=main}"
-: "${LLMD_COMMIT:=a57610457d9f5ae193b9683e7a4ead03724cc076}"
+: "${LLMD_REF:=v0.6.0}"
+: "${LLMD_COMMIT:=}"
 
 : "${LLMD_INFRA_REPO_URL:=https://github.com/llm-d-incubation/llm-d-infra.git}"
-: "${LLMD_INFRA_REF:=main}"
-: "${LLMD_INFRA_COMMIT:=143620a671cc1f9238da0d25fea44c21876c7e84}"
+: "${LLMD_INFRA_REF:=v1.4.0}"
+: "${LLMD_INFRA_COMMIT:=}"
 
 : "${GATEWAY_API_CRD_REVISION:=v1.5.1}"
 : "${GATEWAY_API_INFERENCE_EXTENSION_CRD_REVISION:=v1.4.0}"
 : "${GAIE_CHART_VERSION:=v1.4.0}"
 : "${AGENTGATEWAY_VERSION:=v1.0.0}"
 
-: "${LLMD_INFERENCE_SCHEDULER_IMAGE_HUB:=docker.io/danehans}"
+: "${LLMD_INFERENCE_SCHEDULER_IMAGE_HUB:=ghcr.io/llm-d}"
 : "${LLMD_INFERENCE_SCHEDULER_IMAGE_NAME:=llm-d-inference-scheduler}"
-: "${LLMD_INFERENCE_SCHEDULER_IMAGE_TAG:=v0.7.0-rc.2}"
-: "${LLMD_ROUTING_SIDECAR_IMAGE:=docker.io/danehans/llm-d-routing-sidecar:v0.7.0-rc.2}"
+: "${LLMD_INFERENCE_SCHEDULER_IMAGE_TAG:=v0.7.1}"
+: "${LLMD_ROUTING_SIDECAR_IMAGE:=ghcr.io/llm-d/llm-d-routing-sidecar:v0.7.1}"
 
 : "${INFERENCE_GATEWAY_LOCAL_PORT:=18000}"
 : "${PROMETHEUS_LOCAL_PORT:=19090}"
@@ -239,9 +239,13 @@ sync_repo() {
 
   log_info "Fetching ${name} at ${ref}"
   git -C "${target}" fetch --depth 1 origin "${ref}"
-  if ! git -C "${target}" checkout --detach "${commit}" >/dev/null 2>&1; then
-    git -C "${target}" fetch --depth 1 origin "${commit}"
-    git -C "${target}" checkout --detach "${commit}"
+  if [[ -n "${commit}" ]]; then
+    if ! git -C "${target}" checkout --detach "${commit}" >/dev/null 2>&1; then
+      git -C "${target}" fetch --depth 1 origin "${commit}"
+      git -C "${target}" checkout --detach "${commit}"
+    fi
+  else
+    git -C "${target}" checkout --detach FETCH_HEAD >/dev/null
   fi
 }
 
@@ -355,19 +359,21 @@ wait_for_demo_readiness() {
 }
 
 verify_expected_images() {
-  local scheduler_image
-  local sidecar_image
+  local scheduler_images
+  local modelservice_images
   local expected_scheduler
 
   expected_scheduler="${LLMD_INFERENCE_SCHEDULER_IMAGE_HUB}/${LLMD_INFERENCE_SCHEDULER_IMAGE_NAME}:${LLMD_INFERENCE_SCHEDULER_IMAGE_TAG}"
-  scheduler_image="$(kubectl get deploy "$(gaie_deployment_name)" -n "${NAMESPACE}" -o jsonpath='{.spec.template.spec.containers[0].image}')"
-  sidecar_image="$(kubectl get deploy "$(decode_deployment_name)" -n "${NAMESPACE}" -o jsonpath='{.spec.template.spec.initContainers[0].image}')"
+  scheduler_images="$(kubectl get deploy "$(gaie_deployment_name)" -n "${NAMESPACE}" -o jsonpath='{range .spec.template.spec.initContainers[*]}{.image}{"\n"}{end}{range .spec.template.spec.containers[*]}{.image}{"\n"}{end}')"
+  modelservice_images="$(kubectl get deploy "$(decode_deployment_name)" -n "${NAMESPACE}" -o jsonpath='{range .spec.template.spec.initContainers[*]}{.image}{"\n"}{end}{range .spec.template.spec.containers[*]}{.image}{"\n"}{end}')"
 
-  log_info "Scheduler image: ${scheduler_image}"
-  log_info "Routing sidecar image: ${sidecar_image}"
+  log_info "Scheduler deployment images:"
+  printf '%s\n' "${scheduler_images}"
+  log_info "Modelservice decode deployment images:"
+  printf '%s\n' "${modelservice_images}"
 
-  [[ "${scheduler_image}" == "${expected_scheduler}" ]] || die "Unexpected scheduler image: ${scheduler_image}"
-  [[ "${sidecar_image}" == "${LLMD_ROUTING_SIDECAR_IMAGE}" ]] || die "Unexpected routing sidecar image: ${sidecar_image}"
+  grep -Fxq "${expected_scheduler}" <<< "${scheduler_images}" || die "Expected scheduler image not found: ${expected_scheduler}"
+  grep -Fxq "${LLMD_ROUTING_SIDECAR_IMAGE}" <<< "${modelservice_images}" || die "Expected routing sidecar image not found: ${LLMD_ROUTING_SIDECAR_IMAGE}"
 }
 
 verify_gateway_service_type() {
